@@ -38,93 +38,97 @@
 
 #-******************************************************************************
 #-******************************************************************************
-# FIRST, ARNOLD STUFF
+# FIRST, MTOA STUFF
 #-******************************************************************************
 #-******************************************************************************
 
-# If ARNOLD_ROOT not set, use predefined paths
-IF(NOT DEFINED ARNOLD_ROOT)
+# If MTOA_ROOT not set, use predefined paths
+IF(NOT DEFINED MTOA_ROOT)
     IF ( ${CMAKE_HOST_UNIX} )
         IF( ${DARWIN} )
           # TODO: set to default install path when shipping out
-          SET( ALEMBIC_ARNOLD_ROOT NOTFOUND )
+          SET( ALEMBIC_MTOA_ROOT NOTFOUND )
         ELSE()
           # TODO: set to default install path when shipping out
-          SET( ALEMBIC_ARNOLD_ROOT "/sww/tools/arnold" )
+          SET( ALEMBIC_MTOA_ROOT "/sww/tools/MTOA" )
         ENDIF()
     ELSE()
         IF ( ${WINDOWS} )
           # TODO: set to 32-bit or 64-bit path
-          SET( ALEMBIC_ARNOLD_ROOT NOTFOUND )
+          SET( ALEMBIC_MTOA_ROOT NOTFOUND )
         ELSE()
-          SET( ALEMBIC_ARNOLD_ROOT NOTFOUND )
+          SET( ALEMBIC_MTOA_ROOT NOTFOUND )
         ENDIF()
     ENDIF()
 ELSE()
-    # Prefer ARNOLD_ROOT set from the CMakeCache'd variable than default paths
-    SET( ALEMBIC_ARNOLD_ROOT ${ARNOLD_ROOT})
+    # Prefer MTOA_ROOT set from the CMakeCache'd variable than default paths
+    SET( ALEMBIC_MTOA_ROOT ${MTOA_ROOT})
 ENDIF()
 
-# Prefer ARNOLD_ROOT set from the environment over the CMakeCache'd variable
-IF(NOT $ENV{ARNOLD_ROOT}x STREQUAL "x")
-  SET( ALEMBIC_ARNOLD_ROOT $ENV{ARNOLD_ROOT})
+# Prefer MTOA_ROOT set from the environment over the CMakeCache'd variable
+IF(NOT $ENV{MTOA_ROOT}x STREQUAL "x")
+  SET( ALEMBIC_MTOA_ROOT $ENV{MTOA_ROOT})
 ENDIF()
 
 
-FIND_PATH( ALEMBIC_ARNOLD_INCLUDE_PATH ai.h
+FIND_PATH( ALEMBIC_MTOA_INCLUDE_PATH utils/Version.h
            PATHS
-           "${ALEMBIC_ARNOLD_ROOT}/include"
+           "${ALEMBIC_MTOA_ROOT}/include"
            NO_DEFAULT_PATH
            NO_CMAKE_ENVIRONMENT_PATH
            NO_CMAKE_PATH
            NO_SYSTEM_ENVIRONMENT_PATH
            NO_CMAKE_SYSTEM_PATH
-           DOC "The directory where ri.h resides" )
+           DOC "The directory where utils/Version.h resides" )
 
-SET( ALEMBIC_ARNOLD_LIBARNOLD ALEMBIC_ARNOLD_LIBARNOLD-NOTFOUND )
-FIND_LIBRARY( ALEMBIC_ARNOLD_LIBARNOLD ai
+SET( ALEMBIC_MTOA_LIBMTOA ALEMBIC_MTOA_LIBMTOA-NOTFOUND )
+FIND_LIBRARY( ALEMBIC_MTOA_LIBMTOA mtoa_api
               PATHS
-              "${ALEMBIC_ARNOLD_ROOT}/lib/"
-              "${ALEMBIC_ARNOLD_ROOT}/bin/"
+              "${ALEMBIC_MTOA_ROOT}/lib"
+              "${ALEMBIC_MTOA_ROOT}/bin"
               NO_DEFAULT_PATH
               NO_CMAKE_ENVIRONMENT_PATH
               NO_CMAKE_PATH
               NO_SYSTEM_ENVIRONMENT_PATH
               NO_CMAKE_SYSTEM_PATH
-              DOC "The ai library" )
+              DOC "The mtoa_api library" )
+
+MESSAGE( STATUS "MTOA ROOT ${ALEMBIC_MTOA_ROOT}" )
+
 
 
 IF( ${WINDOWS} )
-  SET( ARNOLD_COMPILE_FLAGS "/c /nologo /MT /TP /DWIN32" )
-  SET( ARNOLD_LINK_FLAGS "/nologo /dll /LIBPATH:\"%RMANTREE%\lib\" libai.lib" )
+  SET( MTOA_COMPILE_FLAGS "/c /nologo /MT /TP /DWIN32" )
+  SET( MTOA_LINK_FLAGS "/nologo /dll /LIBPATH:\"%RMANTREE%\lib\" libmtoa_api.lib" )
 ELSEIF( ${DARWIN} )
-  SET( ARNOLD_COMPILE_FLAGS "-c" )
-  SET( ARNOLD_LINK_FLAGS "-bundle -undefined dynamic_lookup" )
+  SET( MTOA_COMPILE_FLAGS "-c" )
+  SET( MTOA_LINK_FLAGS "-bundle -undefined dynamic_lookup" )
 ELSEIF( ${LINUX} )
-  SET( ARNOLD_COMPILE_FLAGS "-c -fPIC" )
-  SET( ARNOLD_LINK_FLAGS "-shared" )
+  SET( MTOA_COMPILE_FLAGS "-c -fPIC -D_LINUX" )
+  SET( MTOA_LINK_FLAGS "-shared" )
 ENDIF()
 
-IF ( ( ${ALEMBIC_ARNOLD_INCLUDE_PATH} STREQUAL "ALEMBIC_ARNOLD_INCLUDE_PATH-NOTFOUND" ) OR
-     ( ${ALEMBIC_ARNOLD_LIBARNOLD} STREQUAL "ALEMBIC_ARNOLD_LIBARNOLD-NOTFOUND" ) )
-  MESSAGE( STATUS "Arnold not found -- BOOO!" )
-  SET( ALEMBIC_ARNOLD_FOUND FALSE )
+IF ( ( ${ALEMBIC_MTOA_INCLUDE_PATH} STREQUAL "ALEMBIC_MTOA_INCLUDE_PATH-NOTFOUND" ) OR
+     ( ${ALEMBIC_MTOA_LIBMTOA} STREQUAL "ALEMBIC_MTOA_LIBMTOA-NOTFOUND" ) )
+  MESSAGE( STATUS "MTOA not found" )
+  SET( ALEMBIC_MTOA_FOUND FALSE )
 ELSE()
-  MESSAGE( STATUS "ARNOLD INCLUDE PATH: ${ALEMBIC_ARNOLD_INCLUDE_PATH}" )
-  MESSAGE( STATUS "libai: ${ALEMBIC_ARNOLD_LIBARNOLD}" )
-  SET( ALEMBIC_ARNOLD_FOUND TRUE )
-  SET( ALEMBIC_ARNOLD_LIBS ${ALEMBIC_ARNOLD_LIBARNOLD} )
+  MESSAGE( STATUS "Found MTOA!" )
+  MESSAGE( STATUS "MTOA INCLUDE PATH: ${ALEMBIC_MTOA_INCLUDE_PATH}" )
+  MESSAGE( STATUS "mtoa_api: ${ALEMBIC_MTOA_LIBMTOA}" )
+  SET( ALEMBIC_MTOA_FOUND TRUE )
+  SET( ALEMBIC_MTOA_LIBS ${ALEMBIC_MTOA_LIBMTOA} )
 ENDIF()
 
 ##-*****************************************************************************
 ##-*****************************************************************************
-# Macro for making arnold plugins
+# Macro for making MTOA plugins
 ##-*****************************************************************************
 ##-*****************************************************************************
-MACRO(ADD_ARNOLD_CXX_PLUGIN PluginName SourceFile1 )
+MACRO(ADD_MTOA_CXX_PLUGIN PluginName SourceFile1 )
 
-  IF( NOT ${ALEMBIC_ARNOLD_FOUND} )
-    MESSAGE( FATAL_ERROR "Arnold is not found" )
+  IF( NOT ${ALEMBIC_MTOA_FOUND} )
+    MESSAGE( FATAL_ERROR "MTOA is not found. :(" )
   ENDIF()
 
   GET_FILENAME_COMPONENT( PluginNameNoDirectory ${PluginName} NAME )
@@ -133,16 +137,16 @@ MACRO(ADD_ARNOLD_CXX_PLUGIN PluginName SourceFile1 )
   SET( TMP_SOURCES ${SourceFile1} ${ARGN} )
   SET( ${PluginName}_SOURCES ${TMP_SOURCES} )
 
-  INCLUDE_DIRECTORIES( ${ALEMBIC_ARNOLD_INCLUDE_PATH} )
+  INCLUDE_DIRECTORIES( ${ALEMBIC_MTOA_INCLUDE_PATH} )
 
   ADD_LIBRARY( ${PluginName} MODULE ${TMP_SOURCES} )
 
   SET_TARGET_PROPERTIES( ${PluginName}
                          PROPERTIES
-                         COMPILE_FLAGS ${ARNOLD_COMPILE_FLAGS}
-                         LINK_FLAGS ${ARNOLD_LINK_FLAGS}
+                         COMPILE_FLAGS ${MTOA_COMPILE_FLAGS}
+                         LINK_FLAGS ${MTOA_LINK_FLAGS}
                          PREFIX "" )
 
-  TARGET_LINK_LIBRARIES ( ${PluginName} ${ALEMBIC_ARNOLD_LIBARNOLD} )
+  TARGET_LINK_LIBRARIES ( ${PluginName} ${ALEMBIC_MTOA_LIBMTOA} )
 
-ENDMACRO(ADD_ARNOLD_CXX_PLUGIN)
+ENDMACRO(ADD_MTOA_CXX_PLUGIN)

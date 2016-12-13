@@ -1,3 +1,5 @@
+#!/usr/bin/env python2.5
+#-*- mode: python -*-
 ##-*****************************************************************************
 ##
 ## Copyright (c) 2009-2011,
@@ -15,10 +17,9 @@
 ## copyright notice, this list of conditions and the following disclaimer
 ## in the documentation and/or other materials provided with the
 ## distribution.
-## *       Neither the name of Sony Pictures Imageworks, nor
-## Industrial Light & Magic, nor the names of their contributors may be used
-## to endorse or promote products derived from this software without specific
-## prior written permission.
+## *       Neither the name of Industrial Light & Magic nor the names of
+## its contributors may be used to endorse or promote products derived
+## from this software without specific prior written permission.
 ##
 ## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -34,13 +35,26 @@
 ##
 ##-*****************************************************************************
 
-IF( ${MAYA_FOUND} )
+import os, shutil, sys
 
-# ADD_SUBDIRECTORY( bb_alembicArchiveNode )
-ADD_SUBDIRECTORY( icons )
-ADD_SUBDIRECTORY( scripts )
-ADD_SUBDIRECTORY( shelves )
+# USAGE:
+# CopyScriptFile <SRC> <DST>
+if len( sys.argv ) != 3:
+    print ( "USAGE: %s <SRC_SCRIPT> <DST_SCRIPT>" % sys.argv[0] )
+    sys.exit( -1 )
 
+srcScript = sys.argv[1]
+dstScript = sys.argv[2]
 
-ENDIF()
+if os.name == "nt":
+    if not dstScript.endswith( ".py" ):
+        dstScript = "%s.py" % dstScript
 
+retcode = 0
+# Copy the files
+try:
+    shutil.copy( srcScript, dstScript )
+except IOError:
+    retcode = -1
+
+sys.exit( retcode )

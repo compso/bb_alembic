@@ -74,23 +74,13 @@ ENDIF()
 FIND_PATH( ALEMBIC_ARNOLD_INCLUDE_PATH ai.h
            PATHS
            "${ALEMBIC_ARNOLD_ROOT}/include"
-           NO_DEFAULT_PATH
-           NO_CMAKE_ENVIRONMENT_PATH
-           NO_CMAKE_PATH
-           NO_SYSTEM_ENVIRONMENT_PATH
-           NO_CMAKE_SYSTEM_PATH
-           DOC "The directory where ri.h resides" )
+           DOC "The directory where ai.h resides" )
 
 SET( ALEMBIC_ARNOLD_LIBARNOLD ALEMBIC_ARNOLD_LIBARNOLD-NOTFOUND )
 FIND_LIBRARY( ALEMBIC_ARNOLD_LIBARNOLD ai
               PATHS
               "${ALEMBIC_ARNOLD_ROOT}/lib/"
               "${ALEMBIC_ARNOLD_ROOT}/bin/"
-              NO_DEFAULT_PATH
-              NO_CMAKE_ENVIRONMENT_PATH
-              NO_CMAKE_PATH
-              NO_SYSTEM_ENVIRONMENT_PATH
-              NO_CMAKE_SYSTEM_PATH
               DOC "The ai library" )
 
 
@@ -107,7 +97,8 @@ ENDIF()
 
 IF ( ( ${ALEMBIC_ARNOLD_INCLUDE_PATH} STREQUAL "ALEMBIC_ARNOLD_INCLUDE_PATH-NOTFOUND" ) OR
      ( ${ALEMBIC_ARNOLD_LIBARNOLD} STREQUAL "ALEMBIC_ARNOLD_LIBARNOLD-NOTFOUND" ) )
-  MESSAGE( STATUS "Arnold not found -- BOOO!" )
+
+  MESSAGE( STATUS "AlembicArnold.cmake Arnold not found" )
   SET( ALEMBIC_ARNOLD_FOUND FALSE )
 ELSE()
   MESSAGE( STATUS "ARNOLD INCLUDE PATH: ${ALEMBIC_ARNOLD_INCLUDE_PATH}" )
@@ -124,7 +115,7 @@ ENDIF()
 MACRO(ADD_ARNOLD_CXX_PLUGIN PluginName SourceFile1 )
 
   IF( NOT ${ALEMBIC_ARNOLD_FOUND} )
-    MESSAGE( FATAL_ERROR "Arnold is not found" )
+    MESSAGE( FATAL_ERROR "Arnold is not found. :(" )
   ENDIF()
 
   GET_FILENAME_COMPONENT( PluginNameNoDirectory ${PluginName} NAME )
