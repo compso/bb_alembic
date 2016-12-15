@@ -52,9 +52,9 @@ ENDIF()
 
 macro(ALEMBIC_SET_PROPERTIES target)
 	
-	if(ALEMBIC_SHARED_LIBS)
-		set(_alembic_DEFINES  "${_maya_DEFINES}" ALEMBIC_DLL)
-	endif()
+	# if(ALEMBIC_SHARED_LIBS)
+	# 	set(_alembic_DEFINES  "${_maya_DEFINES}" ALEMBIC_DLL)
+	# endif()
 	target_include_directories(${target} PUBLIC ${ALEMBIC_INCLUDE_DIR} ${ALEMBIC_ILMBASE_INCLUDE_DIRECTORY})
 	target_link_libraries(${target} ${ALEMBIC_LIBRARY} ${ALEMBIC_ILMBASE_HALF_LIB} ${ALEMBIC_ILMBASE_IEXMATH_LIB} ${ALEMBIC_ILMBASE_IEX_LIB} ${ALEMBIC_ILMBASE_ILMTHREAD_LIB} ${ALEMBIC_ILMBASE_IMATH_LIB})
 	
@@ -99,7 +99,7 @@ find_package_handle_standard_args( "Alembic" DEFAULT_MSG
 
 IF( ALEMBIC_FOUND )
   #  SET( MAYA_FOUND 1 CACHE STRING "Set to 1 if Maya is found, 0 otherwise" )
-  MESSAGE( STATUS "Found Alembic!" )
+  MESSAGE( STATUS "Found Alembic!" ${ALEMBIC_LIBRARY_DIR})
 ENDIF(  )
 
 if(NOT ALEMBIC_FOUND)

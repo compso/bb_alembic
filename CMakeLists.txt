@@ -122,9 +122,6 @@ IF (DEFINED ENV{INSTALL_PREFIX})
         $ENV{INSTALL_PREFIX}/${BBA_VERSION})
 ENDIF()
 
-# Tell me what my install location would be
-MESSAGE(STATUS "The install dir is ${CMAKE_INSTALL_PREFIX}")
-
 if (NOT DEFINED INSTALL_DIR)
     if (DEFINED INSTALL_ROOT)
         set(INSTALL_DIR "${INSTALL_ROOT}/bb_alembic-${BBA_VERSION}")
@@ -139,6 +136,16 @@ else()
     message("Installing to:\n\t${INSTALL_DIR}")
 endif()
 
+# Set up installation paths
+set(DSO_INSTALL_DIR ${INSTALL_DIR}/procedurals)
+set(TRANSLATOR_INSTALL_DIR ${INSTALL_DIR}/extensions)
+set(SHADERS_INSTALL_DIR ${INSTALL_DIR}/shaders)
+set(PLUGINS_INSTALL_DIR ${INSTALL_DIR}/plug-ins)
+set(PYSIDE_INSTALL_DIR ${INSTALL_DIR}/pyside)
+set(CMAKE_INSTALL_PREFIX ${INSTALL_DIR})
+# Tell me what my install location would be
+MESSAGE(STATUS "The install dir is ${CMAKE_INSTALL_PREFIX}")
+
 # check in the source directory
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
@@ -151,19 +158,19 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/Modules)
 INCLUDE("./cmake/AlembicIlmBase.cmake")
 INCLUDE_DIRECTORIES(${ALEMBIC_ILMBASE_INCLUDE_DIRECTORY})
 
-INCLUDE("./cmake/AlembicBoost.cmake")
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+# INCLUDE("./cmake/AlembicBoost.cmake")
 
+SET(Boost_USE_STATIC_LIBS ${USE_STATIC_BOOST})
+find_package(Boost REQUIRED COMPONENTS regex system program_options filesystem thread)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 # Find alembic
 find_package(Alembic REQUIRED)
 
 # Find HDF5
 IF (USE_HDF5)
     find_package(AlembicHDF5 REQUIRED)
-    find_package(AlembicZlib REQUIRED)
-    find_package(SZIP)
-    SET(CORE_LIBS
-        Alembic
+    find_package(AlembicZLIB REQUIRED)
+    SET(CORE_LIBS        
         ${HDF5_LIBRARIES}
         ${ALEMBIC_ILMBASE_LIBS}
         ${CMAKE_THREAD_LIBS_INIT}
@@ -171,8 +178,7 @@ IF (USE_HDF5)
         ${EXTERNAL_MATH_LIBS}
     )
 ELSE()
-    SET(CORE_LIBS
-        Alembic
+    SET(CORE_LIBS        
         ${ALEMBIC_ILMBASE_LIBS}
         ${CMAKE_THREAD_LIBS_INIT}
         ${EXTERNAL_MATH_LIBS}
@@ -180,6 +186,17 @@ ELSE()
 ENDIF()
 
 
+
+# Maya
+IF (USE_MAYA)
+    INCLUDE("./cmake/AlembicMaya.cmake")
+    IF (${MAYA_FOUND})
+        MESSAGE(STATUS "Building Maya plugins")
+        ADD_SUBDIRECTORY(maya)
+    ELSE()
+        MESSAGE(STATUS "Maya not found")
+    ENDIF()
+ENDIF()
 
 # Arnold
 IF (USE_ARNOLD)
@@ -199,17 +216,6 @@ IF (USE_MTOA)
         ADD_SUBDIRECTORY( mtoa )
     ELSE()
         MESSAGE(STATUS "MtoA not found")
-    ENDIF()
-ENDIF()
-
-# Maya
-IF (USE_MAYA)
-    INCLUDE("./cmake/AlembicMaya.cmake")
-    IF (${MAYA_FOUND})
-        MESSAGE(STATUS "Building Maya plugins")
-        ADD_SUBDIRECTORY(maya)
-    ELSE()
-        MESSAGE(STATUS "Maya not found")
     ENDIF()
 ENDIF()
 

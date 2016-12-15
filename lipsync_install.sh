@@ -42,8 +42,10 @@ ${CMAKE} \
 -DUSE_MAYA=ON \
 -DMAYA_ROOT=${MAYA_LOCATION} \
 -DALEMBIC_MAYA_INC_ROOT=/home/ashleyr/Dev/3rdparty/Maya-devkit-2017/include \
+-DUSE_HDF5=ON \
+-DUSE_STATIC_HDF5=OFF \
+-DHDF5_ROOT=${HDF5_ROOT} \
 -DBOOST_ROOT=/sw/pkg/boost/1.55.0 \
+-DUSE_MTOA=ON \
+-DMTOA_ROOT=/sw/pkg/solidangle/mtoa/${MTOA_VERSION}/${MAYA_VERSION} \
 ..
-
-# -DUSE_MTOA=ON \
-# -DMTOA_ROOT=/sw/pkg/solidangle/mtoa/${MTOA_VERSION}/${MAYA_VERSION} \
