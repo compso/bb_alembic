@@ -4,7 +4,7 @@ export MAYA_VERSION=2017
 export MAYA_LOCATION=/usr/autodesk/maya${MAYA_VERSION}
 export ALEMBIC_VERSION=1.7.0
 export MTOA_VERSION=1.4.0
-export ARNOLD_VERSION=4.2.14.1
+export ARNOLD_VERSION=4.2.15.1
 
 CLANG_VERSION=3.6.0
 CLANG_ROOT=/opt/clang/${CLANG_VERSION}
@@ -49,3 +49,7 @@ ${CMAKE} \
 -DUSE_MTOA=ON \
 -DMTOA_ROOT=/sw/pkg/solidangle/mtoa/${MTOA_VERSION}/${MAYA_VERSION} \
 ..
+
+make -j `nproc`
+
+make install
