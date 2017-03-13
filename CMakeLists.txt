@@ -1,343 +1,240 @@
-##-*****************************************************************************
-##
-## Copyright (c) 2009-2013,
-##  Sony Pictures Imageworks Inc. and
-##  Industrial Light & Magic, a division of Lucasfilm Entertainment Company Ltd.
-##
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are
-## met:
-## *       Redistributions of source code must retain the above copyright
-## notice, this list of conditions and the following disclaimer.
-## *       Redistributions in binary form must reproduce the above
-## copyright notice, this list of conditions and the following disclaimer
-## in the documentation and/or other materials provided with the
-## distribution.
-## *       Neither the name of Industrial Light & Magic nor the names of
-## its contributors may be used to endorse or promote products derived
-## from this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-## LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-## A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-## OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
-##-*****************************************************************************
 
-# This is the top level of the Alembic project. Bins and then libs!
-# Also, this top level should include any "global" build configurations
-CMAKE_MINIMUM_REQUIRED( VERSION 2.8 )
+project(bb_alembic)
 
-# Declare an Alembic Project
-PROJECT( ALEMBIC )
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 
-IF (RUN_FROM_MK)
-  SET ( CMAKE_FIRST_RUN CACHE STRING "CMake initialised from mk script" )
-  MARK_AS_ADVANCED ( CMAKE_FIRST_RUN )
-ENDIF()
+MESSAGE(STATUS "CMAKE SYSTEM NAME: ${CMAKE_SYSTEM_NAME}")
 
 IF (NOT DEFINED QUIET)
-  SET(CMAKE_VERBOSE_MAKEFILE TRUE)
+    SET(CMAKE_VERBOSE_MAKEFILE TRUE)
 ENDIF()
 
-# Declare the version
-SET( PROJECT_VERSION_MAJOR  1 )
-SET( PROJECT_VERSION_MINOR  5 )
-SET( PROJECT_VERSION_PATCH  0.21 )
-SET( PROJECT_VERSION
-     ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH} )
-SET( VERSION ${PROJECT_VERSION} )
+set(BBA_MAJOR_VERSION 1)
+set(BBA_MINOR_VERSION 0)
+set(BBA_PATCH_VERSION 1)
+set(BBA_VERSION "${BBA_MAJOR_VERSION}.${BBA_MINOR_VERSION}.${BBA_PATCH_VERSION}")
+set(VERSION ${BBA_VERSION})
 
-SET( ALEMBIC_NO_TESTS FALSE )
-SET( ALEMBIC_NO_BOOTSTRAP FALSE )
-SET( ALEMBIC_NO_OPENGL FALSE )
+OPTION(USE_ARNOLD "Include Arnold stuff" ON)
+OPTION(USE_MTOA "Include MtoA stuff" ON)
+OPTION(USE_MAYA "Include Maya stuff" ON)
+OPTION(USE_HDF5 "Include HDF5 stuff" OFF)
+OPTION(USE_STATIC_BOOST "Build with static Boost libs" ON)
+OPTION(USE_ILMBASE_STATIC_LIBS "Build with static ilmBase libs" ON)
+OPTION(USE_STATIC_HDF5 "Build with static HDF5 libs" OFF)
+OPTION(ALEMBIC_SHARED_LIBS "Build shared libraries" ON)
 
-MESSAGE(STATUS "CMAKE SYSTEM NAME = ${CMAKE_SYSTEM_NAME}" )
-
-# Windows flag
-SET( WINDOWS FALSE )
-IF( "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" )
-  SET( WINDOWS TRUE )
+IF(NOT MTOA_VERSION AND NOT $ENV{MTOA_VERSION} STREQUAL "")
+  SET(MTOA_VERSION $ENV{MTOA_VERSION})
 ENDIF()
 
-SET( DARWIN FALSE )
-IF( "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin" )
-  SET( DARWIN TRUE )
+# set(CMAKE_BUILD_TYPE RELEASE)
+# set(CMAKE_VERBOSE_MAKEFILE FALSE)
+# set(CMAKE_SKIP_RPATH TRUE)
+# CMAKE_POLICY(SET CMP0012 OLD)
+
+# Fix to stop crash on OSX < 10.9
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.8)
+
+#variable helpers
+# Cmake system specific flags
+SET(WINDOWS FALSE)
+IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    SET(WINDOWS TRUE)
 ENDIF()
 
-SET( LINUX FALSE )
-IF( "${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
-  SET( LINUX TRUE )
+SET(DARWIN FALSE)
+IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+    SET(DARWIN TRUE)
+    # suppress rpath warning
+    IF (POLICY CMP0042)
+        CMAKE_POLICY(SET CMP0042 OLD)
+    ENDIF()
 ENDIF()
 
-# Windows support for ILMBase libraries
-IF ( WIN32 )
-  ADD_DEFINITIONS ( -DOPENEXR_DLL -DHALF_EXPORTS )
-  INCLUDE_DIRECTORIES ( $ENV{GLEW_ROOT}/include )
-ENDIF ()
+SET(LINUX FALSE)
+IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    SET(LINUX TRUE)
+ENDIF()
+
+IF (LINUX OR DARWIN)
+	INCLUDE(CheckCXXCompilerFlag)
+	CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+	CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+	IF (COMPILER_SUPPORTS_CXX11)
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	ELSEIF (COMPILER_SUPPORTS_CXX0X)
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+	ENDIF()
+ENDIF()
+
+# Compiler flags
+if (WINDOWS)
+    # Disable some of the bullshit warnings MSVC wants to barf
+    add_definitions( "-W3 -MP -D_CRT_SECURE_NO_WARNINGS -wd4005 -wd4996 -wd4305 -wd4244 -nologo" )
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+ELSEIF (DARWIN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+ENDIF()
+
+
+IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+ENDIF()
 
 # Set some debug vs opt flags
-IF ( "${CMAKE_BUILD_TYPE}" MATCHES "Debug" )
-  ADD_DEFINITIONS( -DDEBUG=1 -UNDEBUG )
-  IF ( NOT WINDOWS )
-    ADD_DEFINITIONS( -Wall -Werror -Wextra -Wno-unused-parameter)
-  ENDIF()
-ELSEIF ( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
-  ADD_DEFINITIONS( -DNDEBUG=1 -UDEBUG )
-  IF ( NOT WINDOWS )
-    ADD_DEFINITIONS( -O3 )
-  ENDIF()
+IF ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+    ADD_DEFINITIONS(-DDEBUG=1 -UNDEBUG)
+    IF (NOT WINDOWS)
+        ADD_DEFINITIONS(-Wall -Werror -Wextra -Wno-unused-parameter)
+    ENDIF()
+ELSEIF ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
+    ADD_DEFINITIONS(-DNDEBUG=1 -UDEBUG)
+    IF (NOT WINDOWS)
+        ADD_DEFINITIONS(-O3)
+    ENDIF()
 ENDIF()
 
-IF ( NOT WINDOWS )
-  SET(EXTERNAL_MATH_LIBS "-lm")
+IF (NOT WINDOWS)
+    SET(EXTERNAL_MATH_LIBS "-lm")
 ELSE()
-  SET(EXTERNAL_MATH_LIBS "")
+    SET(EXTERNAL_MATH_LIBS "")
 ENDIF()
 
-IF( ${WINDOWS} )
-  ADD_DEFINITIONS( -DPLATFORM_WINDOWS -DPLATFORM=WINDOWS )
-ELSEIF( ${DARWIN} )
-  #ADD_DEFINITIONS( -DPLATFORM_DARWIN -DPLATFORM=DARWIN "-arch x86_64" )
-  ADD_DEFINITIONS( -DPLATFORM_DARWIN -DPLATFORM=DARWIN )
+IF (WINDOWS)
+    ADD_DEFINITIONS(-DPLATFORM_WINDOWS -DPLATFORM=WINDOWS)
+ELSEIF (DARWIN)
+    ADD_DEFINITIONS(-DPLATFORM_DARWIN -DPLATFORM=DARWIN)
 ELSE()
-  ADD_DEFINITIONS( -DPLATFORM_LINUX -DPLATFORM=LINUX )
+    ADD_DEFINITIONS(-DPLATFORM_LINUX -DPLATFORM=LINUX -D_LINUX)
 ENDIF()
 
-if (MSVC AND DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
-	MESSAGE(STATUS "Replacing /MD with /MT for compiles" )
-	foreach (MODE "_DEBUG" "_MINSIZEREL" "_RELEASE" "_RELWITHDEBINFO")
-		string(REPLACE "/MD" "/MT" TMP "${CMAKE_C_FLAGS${MODE}}")
-		set(CMAKE_C_FLAGS${MODE} "${TMP}" CACHE STRING "" FORCE)
-		string(REPLACE "/MD" "/MT" TMP "${CMAKE_CXX_FLAGS${MODE}}")
-		set(CMAKE_CXX_FLAGS${MODE} "${TMP}" CACHE STRING "" FORCE)
-	endforeach (MODE)
-endif ()
+# check if we have a local cmake include file and include it if we do
+# this is useful for setting our arnold location as an alternative to
+# environment variables
+if(EXISTS ${CMAKE_SOURCE_DIR}/local.cmake)
+    message(STATUS "Using local.cmake")
+    include(${CMAKE_SOURCE_DIR}/local.cmake)
+endif()
 
-#-******************************************************************************
-#-******************************************************************************
-# INSTALLATION STUFF
-#-******************************************************************************
-#-******************************************************************************
+IF (DEFINED ENV{INSTALL_PREFIX})
+    SET( CMAKE_INSTALL_PREFIX
+        $ENV{INSTALL_PREFIX}/${BBA_VERSION})
+ENDIF()
 
-IF ( DEFINED ENV{ALEMBIC_INSTALL_PREFIX} )
-  SET( CMAKE_INSTALL_PREFIX
-    $ENV{ALEMBIC_INSTALL_PREFIX}/${VERSION} )
-ELSE ()
-  SET( ORIGINAL_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} )
-  SET( CMAKE_INSTALL_PREFIX
-    ${ORIGINAL_INSTALL_PREFIX}/${VERSION} )
-ENDIF ()
+if (NOT DEFINED INSTALL_DIR)
+    if (DEFINED INSTALL_ROOT)
+        set(INSTALL_DIR "${INSTALL_ROOT}/bb_alembic-${BBA_VERSION}")
+        message("INSTALL_ROOT defined. Adding versions automatically:\n\t${INSTALL_DIR}")
+    else()
+        set(INSTALL_ROOT "${CMAKE_BINARY_DIR}/dist")
+        set(INSTALL_DIR "${INSTALL_ROOT}/bb_alembic-${BBA_VERSION}")
+    
+        message("INSTALL_DIR not defined. Defaulting to:\n\t${INSTALL_DIR}")
+    endif()
+else()
+    message("Installing to:\n\t${INSTALL_DIR}")
+endif()
 
+# Set up installation paths
+set(DSO_INSTALL_DIR ${INSTALL_DIR}/procedurals)
+set(TRANSLATOR_INSTALL_DIR ${INSTALL_DIR}/extensions)
+set(SHADERS_INSTALL_DIR ${INSTALL_DIR}/shaders)
+set(PLUGINS_INSTALL_DIR ${INSTALL_DIR}/plug-ins)
+set(PYSIDE_INSTALL_DIR ${INSTALL_DIR}/pyside)
+set(CMAKE_INSTALL_PREFIX ${INSTALL_DIR})
 # Tell me what my install location would be
-MESSAGE(STATUS "The install dir is ${CMAKE_INSTALL_PREFIX}" )
+MESSAGE(STATUS "The install dir is ${CMAKE_INSTALL_PREFIX}")
 
 # check in the source directory
-set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build )
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-#-******************************************************************************
-#-******************************************************************************
-# TESTING STUFF
-#-******************************************************************************
-#-******************************************************************************
-# Globally enable testing.
-#INCLUDE(CTest)
-ENABLE_TESTING()
-IF(BUILD_TESTING)
-  SET(BUILDNAME "${BUILDNAME}" CACHE STRING "Name of build on the dashboard")
-  MARK_AS_ADVANCED(BUILDNAME)
-ENDIF(BUILD_TESTING)
+######
+# Base libs
+######
 
-IF(UNIX AND NOT WINDOWS)
-  FIND_PROGRAM(CMAKE_UNAME uname /bin /usr/bin /usr/local/bin )
-  IF(CMAKE_UNAME)
-    EXEC_PROGRAM(uname ARGS -m OUTPUT_VARIABLE CMAKE_SYSTEM_PROCESSOR)
-    SET(CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE INTERNAL
-"processor type (i386 and x86_64)")
-    IF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-      ADD_DEFINITIONS(-fPIC)
-    ENDIF(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  ENDIF(CMAKE_UNAME)
-ENDIF(UNIX AND NOT WINDOWS)
 
-IF ( ${DARWIN} )
-  ADD_DEFINITIONS( -fPIC )
-ENDIF()
+# IlmBase
+INCLUDE("./cmake/AlembicIlmBase.cmake")
+INCLUDE_DIRECTORIES(${ALEMBIC_ILMBASE_INCLUDE_DIRECTORY})
 
-IF(BOOTSTRAP_MODE)
+# INCLUDE("./cmake/AlembicBoost.cmake")
 
-  ADD_SUBDIRECTORY(build/bootstrap)
+SET(Boost_USE_STATIC_LIBS ${USE_STATIC_BOOST})
+find_package(Boost REQUIRED COMPONENTS regex system program_options filesystem thread)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+# Find alembic
+find_package(Alembic REQUIRED)
 
+# Find HDF5
+IF (USE_HDF5)
+    find_package(AlembicHDF5 REQUIRED)
+    find_package(AlembicZLIB REQUIRED)
+    SET(CORE_LIBS        
+        ${HDF5_LIBRARIES}
+        ${ALEMBIC_ILMBASE_LIBS}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${ZLIB_LIBRARIES}
+        ${EXTERNAL_MATH_LIBS}
+    )
 ELSE()
-
-# Set up the include directories
-# IF( WINDOWS )
-#  INCLUDE_DIRECTORIES( "C:/Program Files (x86)/Microsoft Visual Studio 9.0/VC/include" )
-# ENDIF()
-
-FIND_PACKAGE(Threads REQUIRED)
-FIND_PACKAGE(ZLIB REQUIRED)
-
-#-******************************************************************************
-#-******************************************************************************
-# OPEN GL STUFF
-#-******************************************************************************
-#-******************************************************************************
-FIND_PACKAGE( OpenGL )
-FIND_PACKAGE( GLUT )
-
-IF ( ${WINDOWS} )
-  # Do a windows OpenGL thing, whatever that may be
-  SET( ALEMBIC_GL_LIBS glew32s ${GLUT_LIBRARY} ${OPENGL_LIBRARIES} )
-  INCLUDE_DIRECTORIES ( ${GLUT_INCLUDE_DIR} )
-  INCLUDE_DIRECTORIES ( $ENV{GLEW_ROOT}/include )
-  LINK_DIRECTORIES ( $ENV{GLEW_ROOT}/lib )
-ELSEIF( ${DARWIN} )
-  # Do a darwin OpenGL thing.
-  SET( ALEMBIC_GL_LIBS ${GLUT_LIBRARY} "-framework OpenGL" )
-ELSE()
-  SET( ALEMBIC_GL_LIBS GLEW ${GLUT_LIBRARY} ${OPENGL_LIBRARIES} )
+    SET(CORE_LIBS        
+        ${ALEMBIC_ILMBASE_LIBS}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${EXTERNAL_MATH_LIBS}
+    )
 ENDIF()
 
-MESSAGE( STATUS "OpenGL Libraries: ${ALEMBIC_GL_LIBS}" )
 
-#-******************************************************************************
-#-******************************************************************************
-# BOOST STUFF
-#-******************************************************************************
-#-******************************************************************************
 
-# Include boost
-INCLUDE( "./build/AlembicBoost.cmake" )
-IF ( NOT ALEMBIC_BOOST_FOUND )
-  IF( Boost_FOUND AND (DEFINED Boost_VERSION) AND (NOT ${Boost_VERSION} LESS 104200 ) )
-    SET( ALEMBIC_BOOST_FOUND 1 )
-  ENDIF()
-ENDIF()
-
-IF ( NOT ALEMBIC_BOOST_FOUND )
-  IF( Boost_FOUND )
-    MESSAGE( ERROR "Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION} found. Require 1.42.0 or greater.")
-  ELSE()
-    MESSAGE( ERROR "Boost not found." )
-  ENDIF()
-  MESSAGE( FALTAL_ERROR "Please see comments in ${ALEMBIC_SOURCE_DIR}/build/AlembicBoost.cmake for possible solutions.")
-ENDIF()
-
-INCLUDE_DIRECTORIES( ${ALEMBIC_BOOST_INCLUDE_PATH} )
-
-#-******************************************************************************
-#-******************************************************************************
-# ILM BASE
-#-******************************************************************************
-#-******************************************************************************
-
-INCLUDE( "./build/AlembicIlmBase.cmake" )
-INCLUDE_DIRECTORIES( ${ALEMBIC_ILMBASE_INCLUDE_DIRECTORY} )
-
-IF(DEFINED USE_PYILMBASE AND NOT USE_PYILMBASE)
-    MESSAGE(STATUS "Skipping PyILMBase")
-ELSE()
-    MESSAGE( STATUS "About to include AlembicPyIlmBase.cmake" )
-  INCLUDE( "./build/AlembicPyIlmBase.cmake" )
-  INCLUDE_DIRECTORIES( ${ALEMBIC_PYILMBASE_INCLUDE_DIRECTORY} )
-ENDIF ()
-
-# Include Python stuff
-INCLUDE("./build/AlembicPython.cmake")
-
-# Include HDF5 stuff
-INCLUDE("./build/AlembicHDF5.cmake")
-if ( ALEMBIC_HDF5_FOUND )
-  INCLUDE_DIRECTORIES( ${ALEMBIC_HDF5_INCLUDE_PATH} )
-ENDIF()
-
-# Recurse into libs, then bins.
-ADD_SUBDIRECTORY( lib )
-INCLUDE_DIRECTORIES( "${ALEMBIC_SOURCE_DIR}/lib" )
-
-# Include Prman stuff
-IF(DEFINED USE_PRMAN AND NOT USE_PRMAN)
-    MESSAGE(STATUS "Skipping Prman plugins")
-ELSE()
-    MESSAGE( STATUS "About to include AlembicPRMan.cmake" )
-    INCLUDE( "./build/AlembicPRMan.cmake" )
-    IF( ALEMBIC_PRMAN_FOUND )
-        MESSAGE(STATUS "Building PRMan plugins" )
-        ADD_SUBDIRECTORY( prman )
+# Maya
+IF (USE_MAYA)
+    INCLUDE("./cmake/AlembicMaya.cmake")
+    IF (${MAYA_FOUND})
+        MESSAGE(STATUS "Building Maya plugins")
+        ADD_SUBDIRECTORY(maya)
     ELSE()
-        MESSAGE(STATUS "For some reason, ALEMBIC_PRMAN_FOUND is False?")
+        MESSAGE(STATUS "Maya not found")
     ENDIF()
 ENDIF()
 
-# Include Arnold stuff
-IF(DEFINED USE_ARNOLD AND NOT USE_ARNOLD)
-    MESSAGE(STATUS "Skipping Arnold plugins")
-ELSE()
-    MESSAGE( STATUS "About to include AlembicArnold.cmake" )
-    INCLUDE( "./build/AlembicArnold.cmake" )
-    IF( ALEMBIC_ARNOLD_FOUND )
-        MESSAGE(STATUS "Building Arnold plugins" )
+# Arnold
+IF (USE_ARNOLD)
+    INCLUDE("./cmake/AlembicArnold.cmake")
+    IF (ALEMBIC_ARNOLD_FOUND)
+        MESSAGE(STATUS "Building Arnold plugins")
         ADD_SUBDIRECTORY( arnold )
     ELSE()
-        MESSAGE(STATUS "For some reason, ALEMBIC_ARNOLD_FOUND is False?")
+        MESSAGE(STATUS "Arnold Not found")
     ENDIF()
 ENDIF()
 
-# Include Maya stuff
-IF(DEFINED USE_MAYA AND NOT USE_MAYA)
-    MESSAGE(STATUS "Skipping Maya plugins")
-ELSE()
-    MESSAGE( STATUS "About to include AlembicMaya.cmake" )
-    INCLUDE( "./build/AlembicMaya.cmake" )
-    IF( MAYA_FOUND )
-        MESSAGE(STATUS "Building Maya plugins" )
-        ADD_SUBDIRECTORY( maya )
-    ELSE()
-        MESSAGE(STATUS "For some reason, MAYA_FOUND is False?")
-    ENDIF()
-ENDIF()
-
-
-# Include MtoA stuff
-IF(DEFINED USE_MTOA AND NOT USE_MTOA)
-    MESSAGE(STATUS "Skipping MtoA Extensions")
-ELSE()
-    MESSAGE( STATUS "About to include AlembicMtoA.cmake" )
-    INCLUDE( "./build/AlembicMtoA.cmake" )
-    INCLUDE( "./build/AlembicMaya.cmake" )
-    IF( ALEMBIC_MTOA_FOUND )
-        MESSAGE(STATUS "Building MtoA plugins" )
+IF (USE_MTOA)
+    INCLUDE("./cmake/AlembicMtoA.cmake")
+    IF (ALEMBIC_MTOA_FOUND)
+        MESSAGE(STATUS "Building MtoA plugins")
         ADD_SUBDIRECTORY( mtoa )
     ELSE()
-        MESSAGE(STATUS "For some reason, ALEMBIC_MTOA_FOUND is False?")
+        MESSAGE(STATUS "MtoA not found")
     ENDIF()
 ENDIF()
 
+#-******************************************************************************
 
-# Include PyAlembic stuff
-IF(DEFINED USE_PYALEMBIC AND NOT USE_PYALEMBIC)
-    MESSAGE(STATUS "Skipping Alembic Python bindings")
-ELSE()
-    MESSAGE(STATUS "About to include Python cmake files")
-    ADD_SUBDIRECTORY( python )
-ENDIF()
+SET(_config_msg "\n   * Alembic Configuration          ===")
+MACRO(info_cfg_option
+    _setting)
+    SET(_msg "   * ${_setting}")
+    STRING(LENGTH "${_msg}" _len)
+    WHILE("36" GREATER "${_len}")
+        SET(_msg "${_msg} ")
+        MATH(EXPR _len "${_len} + 1")
+    ENDWHILE()
+    SET(_config_msg "${_config_msg}\n${_msg}${${_setting}}")
+ENDMACRO()
 
-
-# Example code not supported
-ADD_SUBDIRECTORY( examples )
-
-# Uncomment to build python docs Makefile (requires Sphinx)
-# Run `make docs` from build root
-ADD_SUBDIRECTORY( doc )
-
-ENDIF()
+info_cfg_option(USE_ARNOLD)
+info_cfg_option(USE_MAYA)
+info_cfg_option(USE_MTOA)
+info_cfg_option(ALEMBIC_SHARED_LIBS)
+MESSAGE("${_config_msg}")
