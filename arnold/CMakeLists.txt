@@ -35,8 +35,6 @@
 ##-*****************************************************************************
 
 IF( ${ALEMBIC_ARNOLD_FOUND} )
-ADD_SUBDIRECTORY( Tests )
-ADD_SUBDIRECTORY( Procedural )
-ADD_SUBDIRECTORY( bb_ArnoldProcedural )
-#ADD_SUBDIRECTORY( arnold-alembic-procedural )
+	ADD_SUBDIRECTORY( bb_ArnoldProcedural )
+	ADD_SUBDIRECTORY( Tests )
 ENDIF()

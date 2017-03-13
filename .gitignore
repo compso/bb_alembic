@@ -7,3 +7,4 @@ CMakeLists.txt~
 .settings
 *.pyc
 doc/html
+BUILD
