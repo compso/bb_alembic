@@ -11,6 +11,10 @@ Tested with :
 * Maya 2017 update 3
 * MtoA 1.4.2
 
+v 1.0.2
+
+	Fixes for assfile loading
+
 v 1.0.1
 
 	Added motion blur corrections to procedural
