@@ -34,8 +34,53 @@
 ##
 ##-*****************************************************************************
 
-IF( ${ALEMBIC_MTOA_FOUND} )
 
-ADD_SUBDIRECTORY( gpuCacheTranslator )
+SET( H_FILES
+  gpuCacheTranslator.h
+)
 
-ENDIF()
+SET( CXX_FILES
+	gpuCacheTranslator.cpp
+  plugin.cpp
+)
+
+SET( MTOA_TEMPLATE_FILES
+   gpuCacheTemplate.py
+)
+
+SET( SOURCE_FILES ${CXX_FILES} ${H_FILES} )
+
+
+# SET( CORE_LIBS
+#   AlembicAbc
+#   AlembicAbcCoreAbstract
+#   AlembicUtil )
+
+
+INCLUDE_DIRECTORIES( ".." )
+INCLUDE_DIRECTORIES( "../lib" )
+INCLUDE_DIRECTORIES( ${ALEMBIC_ARNOLD_INCLUDE_PATH} )
+INCLUDE_DIRECTORIES( ${ALEMBIC_MAYA_INCLUDE_PATH} ) 
+INCLUDE_DIRECTORIES( ${ALEMBIC_MTOA_INCLUDE_PATH} ) # Lets hard codee this path for now, later we will add a cmake file
+INCLUDE_DIRECTORIES( "/development/playground/maya/include" )
+
+
+ADD_MAYA_CXX_PLUGIN( gpuCacheTranslator ${SOURCE_FILES} )
+TARGET_LINK_LIBRARIES( gpuCacheTranslator
+  ${MAYA_LIBRARIES}
+  ${CORE_LIBS}
+  ${ALEMBIC_ILMBASE_LIBS}
+  ${ALEMBIC_MTOA_LIBMTOA}
+  ${ALEMBIC_ARNOLD_LIBARNOLD}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${ZLIB_LIBRARIES} ${EXTERNAL_MATH_LIBS} )
+ALEMBIC_SET_PROPERTIES(gpuCacheTranslator)
+
+INSTALL( TARGETS gpuCacheTranslator
+         DESTINATION mtoa/$ENV{MAYA_VERSION}/translator )
+
+INSTALL( FILES ${MTOA_TEMPLATE_FILES}
+         DESTINATION mtoa/$ENV{MAYA_VERSION}/AETemplates )
+
+
+
