@@ -1,13 +1,13 @@
 #!/bin/bash
 
-export MAYA_VERSION=2017
+export MAYA_VERSION=2018
 export MAYA_LOCATION=/usr/autodesk/maya${MAYA_VERSION}
 export ALEMBIC_VERSION=1.7.0
-export MTOA_VERSION=1.4.0
-export ARNOLD_VERSION=4.2.15.1
+# export MTOA_VERSION=1.4.0
+# export ARNOLD_VERSION=4.2.15.1
 
-# export MTOA_VERSION=2.0.0
-# export ARNOLD_VERSION=5.0.0.0
+export MTOA_VERSION=2.0.1.1
+export ARNOLD_VERSION=5.0.1.1
 
 CLANG_VERSION=3.6.0
 CLANG_ROOT=/opt/clang/${CLANG_VERSION}
@@ -44,7 +44,7 @@ ${CMAKE} \
 -DILMBASE_ROOT=/sw/pkg/openexr/2.2.0 \
 -DUSE_MAYA=ON \
 -DMAYA_ROOT=${MAYA_LOCATION} \
--DALEMBIC_MAYA_INC_ROOT=/home/ashleyr/Dev/3rdparty/Maya-devkit-2017/include \
+-DALEMBIC_MAYA_INC_ROOT=/home/ashleyr/Dev/3rdparty/Maya-devkit-${MAYA_VERSION}/include \
 -DUSE_HDF5=ON \
 -DUSE_STATIC_HDF5=OFF \
 -DHDF5_ROOT=${HDF5_ROOT} \
