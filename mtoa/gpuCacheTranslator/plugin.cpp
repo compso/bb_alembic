@@ -25,7 +25,7 @@ extern "C"
 
         extension.Requires( "gpuCache" );
         status = extension.RegisterTranslator( "gpuCache",
-                                               "",
+                                               "alembic_loader",
                                                GpuCacheTranslator::creator,
                                                GpuCacheTranslator::nodeInitialiser);
     }

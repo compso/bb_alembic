@@ -133,4 +133,4 @@ class GpuCacheTemplate(templates.ShapeTranslatorTemplate):
         self.addControl('aiUserOptions', label='User Options')
 
 
-templates.registerAETemplate(GpuCacheTemplate, 'gpuCache')
+templates.registerTranslatorUI(GpuCacheTemplate, 'gpuCache', 'alembic_loader')
