@@ -51,7 +51,6 @@ int DJB2Hash(unsigned char *str)
 
 AtNode* GpuCacheTranslator::CreateArnoldNodes()
 {
-    AiMsgDebug("[GpuCacheTranslator] CreateArnoldNodes()");
     m_isMasterDag =  IsMasterInstance();
     m_masterDag = GetMasterInstance();
     if (m_isMasterDag)
@@ -68,7 +67,6 @@ void GpuCacheTranslator::Delete()
 {
    // If the procedural has been expanded at export,
    // we need to delete all the created nodes here
-   AiMsgDebug("[GpuCacheTranslator] Delete()");
    CShapeTranslator::Delete();
 }
 
@@ -86,7 +84,6 @@ void GpuCacheTranslator::Export( AtNode* instance )
         // we should never get here. Early out for safety
         return;
     }
-    AiMsgDebug("[GpuCacheTranslator] Export()");
 
     const char* nodeType = AiNodeEntryGetName(AiNodeGetNodeEntry(instance));
     if (strcmp(nodeType, "ginstance") == 0)
@@ -130,7 +127,6 @@ AtNode* GpuCacheTranslator::ExportInstance(AtNode *instance, const MDagPath& mas
 
 void GpuCacheTranslator::ExportProcedural( AtNode *node, bool update)
 {
-        AiMsgDebug("[GpuCacheTranslator] ExportProcedural()");
         // do basic node export
         ExportMatrix( node );
 
@@ -163,7 +159,7 @@ void GpuCacheTranslator::ExportProcedural( AtNode *node, bool update)
 
         // now set the procedural-specific parameters
 
-        if (!update){                            
+        if (!update){
 
             MFnDagNode fnDagNode( m_dagPath );
             MBoundingBox bound = fnDagNode.boundingBox();
@@ -476,8 +472,8 @@ void GpuCacheTranslator::ExportUserAttrs( AtNode *node )
         {
                 AiNodeDeclare( node, "objectPattern", "constant STRING" );
                 AiNodeSetStr( node, "objectPattern", plug.asString().asChar() );
-        }                       
-        
+        }
+
         plug = FindMayaPlug( "assShaders" );
         if( !plug.isNull() )
         {
@@ -523,7 +519,7 @@ void GpuCacheTranslator::ExportCurveAttrs( AtNode *node )
                 else if (modeCurveInt == 2)
                    AiNodeSetStr(node, "modeCurve", "oriented");
                 else
-                   AiNodeSetStr(node, "modeCurve", "ribbon");                               
+                   AiNodeSetStr(node, "modeCurve", "ribbon");
         }
 }
 
@@ -544,7 +540,7 @@ void GpuCacheTranslator::ExportMotion( AtNode *node )
 
 void GpuCacheTranslator::nodeInitialiser( CAbTranslator context )
 {
-        CExtensionAttrHelper helper( context.maya, "procedural" );
+        CExtensionAttrHelper helper( context.maya, "alembic_loader" );
         CShapeTranslator::MakeCommonAttributes(helper);
         CShapeTranslator::MakeMayaVisibilityFlags(helper);
 

@@ -63,3 +63,5 @@ ${CMAKE} \
 make -j 20
 
 make install
+
+rsync -avzh --progress dist/bb_alembic-2.0.0/ /software/bb_alembic/2.0.0/
